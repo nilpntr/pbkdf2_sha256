@@ -6,12 +6,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/pbkdf2"
+	"strconv"
 	"strings"
 )
 
 var (
 	saltLength = 8
-	iterations = 150000
+	iterations = 15000
 	saltCharts = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
@@ -26,8 +27,12 @@ func genSalt() string {
 	return string(bytes)
 }
 
-func hashInternal(salt string, password string) string {
-	hash := pbkdf2.Key([]byte(password), []byte(salt), iterations, 32, sha256.New)
+func hashInternal(salt string, password string, args ...int) string {
+	_iterations := iterations
+	if len(args) > 0 {
+		_iterations = args[0]
+	}
+	hash := pbkdf2.Key([]byte(password), []byte(salt), _iterations, 32, sha256.New)
 	return hex.EncodeToString(hash)
 }
 
@@ -42,5 +47,14 @@ func CheckPasswordHash(password string, hash string) bool {
 		return false
 	}
 	pwdHashList := strings.Split(hash, "$")
-	return pwdHashList[2] == hashInternal(pwdHashList[1], password)
+	_split := strings.Split(pwdHashList[0], ":")
+	return pwdHashList[2] == hashInternal(pwdHashList[1], password, parseIterations(_split[len(_split)-1]))
+}
+
+func parseIterations(val string) int {
+	p, err := strconv.Atoi(val)
+	if err != nil {
+		return iterations
+	}
+	return p
 }
