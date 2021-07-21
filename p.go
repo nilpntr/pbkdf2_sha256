@@ -36,10 +36,14 @@ func hashInternal(salt string, password string, args ...int) string {
 	return hex.EncodeToString(hash)
 }
 
-func GeneratePasswordHash(password string) string {
+func GeneratePasswordHash(password string, args ...int) string {
+	_iterations := iterations
+	if len(args) > 0 {
+		_iterations = args[0]
+	}
 	salt := genSalt()
 	hash := hashInternal(salt, password)
-	return fmt.Sprintf("pbkdf2:sha256:%v$%s$%s", iterations, salt, hash)
+	return fmt.Sprintf("pbkdf2:sha256:%v$%s$%s", _iterations, salt, hash)
 }
 
 func CheckPasswordHash(password string, hash string) bool {
